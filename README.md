@@ -101,7 +101,7 @@ Hadoop / Ambari install script must be executed using CloudBreak Shell. This she
 | pBluePrintName | Hadoop Cluster blue print (stored in S3 bucket) | hdp-small-cluster | **Replace** |
 | pS3EndPoint | S3 Endpoint | s3://rap-cloudbreak-endpoint | **Replace** |
 
-##### Stack Outputs
+#### Stack Outputs
 
 Stack output provided by the CloudFormation template.
 
@@ -130,7 +130,7 @@ Sample output.
 }
 ```
 
-##### Playbooks & Roles
+#### Playbooks & Roles
 
 Playbook uses **ansible-vault** to generate encrypted credentials. These credentials are passed into plays. 
 
@@ -150,7 +150,7 @@ Shell command for executing playbook.
 ritesh.patel@my-macbook-pro> ansible-playbook main.yml --valut-password-file password.txt
 ```
 
-##### Hadoop / Ambari Install Progress
+#### Hadoop / Ambari Install Progress
 To track progress on Hadoop Cluster log into CloudBreak UI and click on the Cluster. CloudBreak UI will show you events history as it moves on with the install.
 
 **Sample Events History**
@@ -166,20 +166,21 @@ To track progress on Hadoop Cluster log into CloudBreak UI and click on the Clus
 10/28/2017 1:32:15 PM mosaic-cms-hadoop-stack - update in progress: Building Ambari cluster; Ambari ip:34.342.212.113
 10/28/2017 1:42:17 PM mosaic-cms-hadoop-stack - available: Ambari cluster built; Ambari ip:34.342.212.113
 ```
-##### CloudBreak UI
+#### CloudBreak UI
 Upon completing the install CloudBreak and Ambari UI will be accessible through browsers. Use rPublicIp to login to CloudBreak UI. CloudBreak UI allows you to create additional accounts as required. 
 
 CloudBreak UI endpoint: **https://{{rPublicIp}}/**
 (replace rPublicIp with an actual Ip Address)
 Credentials: **admin@example.com / password**
 
-##### Ambari UI
+#### Ambari UI
 From CloudBreak UI, select the "Cluster" to retrieve Ambari endpoint. 
 
 Ambari credentials: **admin/admin**
 
 ** *This stack completes execution in about 30 minutes*
-##### Issues
+
+#### Issues
 Gimme a holler if you find one :) :)
 
 #### Suggestions
