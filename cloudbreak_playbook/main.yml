@@ -1,0 +1,29 @@
+################################################
+# Playbook to create CloudBreak, Ambari & Hadoop
+# @author Ritesh Patel
+# @email rpatel@mosaicdatascience.com
+# @date 10/28/2017
+################################################
+- hosts: localhost
+  connection: local
+  environment:
+    PYTHONPATH: /Library/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages
+  vars_files:
+    - vars/credentials.yml
+  remote_user: cloudbreak
+  roles:
+    # cloudformation role
+    - cft-cloudbreak
+# play to create hadoop cluster on a host created using CloudFormation
+- hosts: cloudbreak
+  remote_user: cloudbreak
+  tasks:
+    # execute cloudbreak shell command to create the cluster
+    - name: create cluster
+      shell: cbd util cloudbreak-shell-quiet < create-hadoop-cluster.sh 
+      args:
+        chdir: /var/lib/cloudbreak-deployment
+    # pause for Ambari initialization
+    - name: Ambari cluster initialization
+      pause:
+        seconds: 600        

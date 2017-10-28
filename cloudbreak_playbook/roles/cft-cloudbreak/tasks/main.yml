@@ -1,0 +1,65 @@
+################################################
+# Task to execute CloudFormation template
+# @author Ritesh Patel
+# @email rpatel@mosaicdatascience.com
+# @date 10/28/2017
+# @description: This task executes CloudFormation template and
+#               uses add_host to create a dynamic host entry
+#               which is held in memory and used by subsequent 
+#               play to create Ambari cluster
+################################################
+---
+- name: create cloudformation stack
+  vars:
+    region: "us-east-1"
+    unique_hash: "{{ 9 | random | to_uuid }}"
+  cloudformation:
+    stack_name: "cloudbreak-stack-{{unique_hash}}"
+    state: "present"
+    disable_rollback: false
+    template: "roles/cft-cloudbreak/files/cloudbreak-stack.template"
+    template_parameters:
+      pUniqueHash: "{{unique_hash}}"
+      # parameters must be replaced (mandatory)
+      # refer to README for parameter description
+      #################################
+      pClusterSubnetCidr: "10.0.7.0/24"
+      pKeypair: "ritesh-mosaic"
+      pInternetGatewayId: "igw-ff8c2386"       
+      pVpcId: "vpc-7fc41c07"
+      pSubnetId: "subnet-4b3ed364"
+      pBluePrintName: "hdp-small-cluster"
+      pS3EndPoint: "s3://rap-cloudbreak-blueprints/"
+      pSecurityGroup: "sg-68b5ca1a"
+      ################################
+      # parameters (optional)
+      pApplicationName: "DEV-CloudBreak-{{unique_hash}}"
+      pApplicationIdentifier: "CloudBreak-{{unique_hash}}"
+      pEnvironment: "development"
+      pClusterInstanceType: "m4.xlarge"
+      pVolumeSize: "50"
+      pVolumeCount: "2"
+      pTagTechnicalContact: "Ritesh Patel"
+      pRegion: "us-east-1"
+      pClusterSecurityGroupName: "default-aws-only-ssh-and-ssl"
+      pCredentialName: "cms-aws-credential"
+    aws_access_key: "{{aws_access_key_id}}"
+    aws_secret_key: "{{aws_secret_access_key}}"
+    region: "{{region}}"
+    tags:
+      Stack: "cloudbreak-stack-4559.01"
+  register: results
+# print stack output
+- debug: msg="{{results.stack_outputs}}"
+  delegate_to: localhost
+# pause for CloudBreak initialization
+- name: Waiting for cloudbreak initialization
+  pause:
+    seconds: 480
+# create dynamic host entry for the new CloudBreak instance
+- name: Create dynamic entry for the cloudbreak host
+  add_host: hostname={{ results.stack_outputs.rPublicDns }} groups=cloudbreak
+# wait for CloudBreak instance ssh
+- name: Wait for cloudbreah ssh to come up
+  wait_for: host={{ results.stack_outputs.rPublicDns }} port=22 timeout=320 state=started
+

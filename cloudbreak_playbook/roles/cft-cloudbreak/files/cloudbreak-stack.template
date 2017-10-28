@@ -1,0 +1,479 @@
+##############################################################
+# @description - This CloudFormation template creates a CloudBreak
+#                instance and prepares for Ambari / Hadoop stack
+# @author - ritesh patel
+# @email - rpatel@mosaicdatascience.com
+# @date - 10/28/2017
+# Note: Template assumes VPC has been created beforehand.
+#       Additionally, this template creates a Subnet into existing VPC, IAM user,
+#       Credentials for IAM User, Elastic IP Address, Roles and Policies required
+#       by CloudBreak. Each resource is created with unique name by appending a
+#       UUID.
+##############################################################
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Creates a stack equipped with CloudBreak, Ambari and Hadoop Cluster
+Metadata:
+  Stack:
+    Value: '0'
+  VersionDate:
+    Value: '20160510'
+  Identifier:
+    Value: cloudbreak-server
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      # Application parameters
+      - Label:
+          default: Application Overview
+        Parameters:
+        - pApplicationName
+        - pApplicationIdentifier
+        - pEnvironment
+        - pTagTechnicalContact
+      # Network parameters
+      - Label:
+          default: Network Configurations
+        Parameters:
+        - pVpcTenancy
+        - pVpcId
+        - pSubnetId
+        - pRegion
+      # Server Security group
+      - Label:
+          default: Server Security Configurations
+        Parameters:
+          - pSecurityGroup
+      # Server configurations parameters
+      - Label:
+          default: Server Instance Configurations
+        Parameters:
+        - pInstanceType
+        - pImageId
+        - pKeypair
+        - pUniqueHash
+      # Hadoop Cluster configurations parameters
+      - Label:
+          default: Hadoop Cluster Configurations
+        Parameters:
+        - pClusterInstanceType
+        - pClusterSubnetCidr
+        - pClusterSecurityGroupName
+        - pInternetGatewayId
+        - pCredentialName
+        - pVolumeSize
+        - pVolumeCount
+        - pBluePrintName
+        - pS3EndPoint
+    # Parameter labels to be displayed to the user
+    ParameterLabels:
+      pVpcTenancy:
+        default: Instance tenancy
+      pApplicationName:
+        default: Application name
+      pApplicationIdentifier:
+        default: Application identifier (e.g. cloudbreak)
+      pEnvironment:
+        default: >-
+          The type of environment this application supports (development,
+          staging, production, other).
+      pTagTechnicalContact:
+        default: Technical contact for this template
+      pVpcId:
+        default: Target VPC to launch CloudBreak server into
+      pSubnetId:
+        default: Target subnet to launch CloudBreak server into
+      pRegion:
+        default: Target region to launch CloudBreak server into
+      pClusterInstanceType:
+        default: Hadoop cluster node instance type to prepare template
+      pClusterSubnetCidr:
+        default: Hadoop cluster subnet cidr to prepare network
+      pSecurityGroup:
+        default: Cloudbreak instance security group
+      pClusterSecurityGroupName:
+        default: Hadoop cluster node security group
+      pInternetGatewayId:
+        default: Internet Gateway Id to associate with Hadoop subnet
+      pInstanceType:
+        default: Cloudbreak server instance type
+      pVolumeSize:
+        defaunt: Hadoop Cluster node volume size
+      pVolumeCount:
+        default: Hadoop Cluster node volume count
+      pBluePrintName:
+        default: Hadoop Cluster blueprint name
+      pS3EndPoint:
+        default: Hadoop Cluster blueprint endpoint
+      pImageId:
+        default: Application server AMI
+      pKeypair:
+        default: EC2 Keypair to attach to the underlying instance for SSH access.
+      pUniqueHash:
+        default: Hash to generate unique resource names
+  Input:
+    Description: Optional paramaters for network deployment and database connectivity (VPC, subnet, etc)
+  Output:
+    Description: Outputs IDs and endpoints of all deployed resources
+# Mappings
+Mappings:
+  RegionSupportMap:
+    us-east-1:
+      ConfigRules: true
+      NatGateway: true
+      Glacier: true
+    us-east-2:
+      ConfigRules: true
+      NatGateway: true
+      Glacier: true
+    us-west-1:
+      ConfigRules: true
+      NatGateway: true
+      Glacier: true
+    us-west-2:
+      ConfigRules: true
+      NatGateway: true
+      Glacier: true
+  RegionAMIMap:
+    AMI:
+      AMZNLINUXHVM: RHEL-7.4_HVM_GA-20170808-x86_64-2-Hourly2-GP2
+    us-east-1:
+      AMZNLINUXHVM: ami-10a78606
+      InstanceType: m4.xlarge
+    us-west-1:
+      AMZNLINUXHVM: ami-01735e61
+      InstanceType: m4.xlarge
+    us-west-2:
+      AMZNLINUXHVM: ami-6ccbc015
+      InstanceType: m4.xlarge
+# Template conditions
+Conditions:
+  cLaunchAsDedicatedInstance:
+    !Equals
+    - !Ref pVpcTenancy
+    - dedicated
+# Parameter definitions with default values (if any)
+Parameters:
+  pVpcTenancy:
+    Description: Instance tenancy behavior for this VPC
+    Type: String
+    Default: default
+    AllowedValues:
+      - default
+      - dedicated
+  pApplicationName:
+    Type: String
+    Default: DEV-CloudBreak-AZa
+  pApplicationIdentifier:
+    Type: String
+    Default: cloudbreak
+  pUniqueHash:
+    Type: String
+    Default: 1234567890
+  pEnvironment:
+    Description: >-
+      The type of environment this application supports (development, staging,
+      production, other).
+    Type: String
+    Default: development
+    AllowedValues:
+      - development
+      - production
+  pTagTechnicalContact:
+    Description: 'Tag for technical contact'
+    Type: String
+    Default: Ritesh Patel
+  pVpcId:
+    Description: 'Vpc Id for launching resources'
+    Type: 'AWS::EC2::VPC::Id'
+    Default: vpc-7fc41c07
+  pSubnetId:
+    Description: 'Subnet Cidr for existing Vpc'
+    Type: 'AWS::EC2::Subnet::Id'
+    Default: subnet-4b3ed364
+  pRegion:
+    Description: 'Region to launch resources into'
+    Type: String
+    Default: 'us-east-1'
+  pInstanceType:
+    Description: AWS instance type to launch CloudBreak on.
+    Type: String
+    Default: m4.xlarge
+    AllowedValues:
+      - m4.large
+      - m4.xlarge
+      - m4.2xlarge
+  pImageId:
+    Description: CloudBreak pre-baked Image Id
+    Type: String
+    Default: ami-10a78606
+  pKeypair:
+    Description: EC2 Keypair to attach to the underlying instance for SSH access.
+    Type: 'AWS::EC2::KeyPair::KeyName'
+    MinLength: '1'
+    MaxLength: '64'
+    Default: ritesh-mosaic
+  pClusterInstanceType:
+    Description: Cluster instance type
+    Type: String
+    Default: m4.xlarge
+  pClusterSubnetCidr:
+    Description: Cluster node subnet Cidr
+    Type: String
+    Default: '10.0.9.0/24'
+  pSecurityGroup:
+    Description: Cloudbreak security group name
+    Type: String
+    Default: sg-68b5ca1a
+  pClusterSecurityGroupName:
+    Description: Cluster node security group name
+    Type: String
+    Default: 'default-aws-only-ssh-and-ssl'
+  pInternetGatewayId:
+    Description: Cluster node vpc internet gateway id
+    Type: String
+    Default: igw-ff8c2386
+  pCredentialName:
+    Description: Cloudbreak credential name
+    Type: String
+    Default: cms-aws-credential
+  pVolumeSize:
+    Description: Cluster node volume size
+    Type: String
+    Default: 50
+  pVolumeCount:
+    Description: Cluster node volume count
+    Type: String
+    Default: 2
+  pBluePrintName:
+    Description: Cluster blueprint name
+    Type: String
+    Default: hdp-small-cluster
+  pS3EndPoint:
+    Description: S3 endpoint for blueprint (template will download from s3 location)
+    Type: String
+    Default: 's3://rap-cloudbreak-blueprints/'
+  pUniqueHash:
+    Description: Unique hash to append
+    Type: String
+    Default: 12345678
+Resources:
+  # CloudBreak Instance
+  rCloudBreakInstance:
+    Type: AWS::EC2::Instance
+    DependsOn: ['rIAMInstanceProfile', 'rDeployerRole']
+    Properties:
+      IamInstanceProfile: !Ref rIAMInstanceProfile
+      ImageId: !Ref pImageId
+      InstanceInitiatedShutdownBehavior: stop
+      InstanceType: !Ref pInstanceType
+      KeyName: !Ref pKeypair
+      Monitoring: true
+      SubnetId: !Ref pSubnetId
+      SecurityGroupIds:
+        - !Ref pSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Ref pApplicationName
+        - Key: Environment
+          Value: !Ref pEnvironment
+        - Key: Project_Code
+          Value: '4559.01'
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+
+          # download and install pip
+          curl "https://bootstrap.pypa.io/get-pip.py" -o "get-pip.py"
+          sleep 10s
+
+          # install pip
+          python get-pip.py
+          sleep 10s
+
+          # print pip version
+          pip --version
+
+          # install aws cli
+          pip install awscli --upgrade --user
+
+          echo 'export PATH=~/.local/bin:$PATH' >>~/.bash_profile
+          sleep 5s
+          source ~/.bash_profile
+
+          # print version
+          aws --version
+
+          # create file
+          profile_file="/var/lib/cloudbreak-deployment/Profile"
+          /bin/cat <<EOM >$profile_file
+          export CB_INSTANCE_PROVIDER=aws
+          export CB_INSTANCE_REGION=us-east-1
+          export UAA_DEFAULT_USER_PW='password'
+          export PUBLIC_IP=${rPublicIp}
+          export AWS_ACCESS_KEY_ID=${rAccessKey}
+          export AWS_SECRET_ACCESS_KEY=${rAccessKey.SecretAccessKey}
+          EOM
+
+          # generate ssh key
+          ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -P ""
+          sleep 10s
+          # copy script to deployer location
+          cp ~/.ssh/id_rsa.pub /var/lib/cloudbreak-deployment/id_rsa.pub
+
+          cd /var/lib/cloudbreak-deployment
+          cbd start
+          sleep 30s
+
+          # download blueprint
+          aws s3 cp ${pS3EndPoint}${pBluePrintName}.json /var/lib/cloudbreak-deployment/${pBluePrintName}.json
+          sleep 10s
+
+          # download key pair
+          aws s3 cp ${pS3EndPoint}${pKeypair}.pem /var/lib/cloudbreak-deployment/${pKeypair}.pem
+          sleep 10s
+
+          chmod 400 ${pKeypair}.pem
+
+          #######################################################################################
+          pUid=$(uuidgen)
+
+          # create hadoop cluster file
+
+          cluster_file="/var/lib/cloudbreak-deployment/create-hadoop-cluster.sh"
+          /bin/cat <<EOM >$cluster_file
+          # setup credentials
+          credential create --AWS --name ${pCredentialName}-$pUid --description ${pCredentialName}-$pUid --roleArn ${rDeployerRole.Arn} --sshKeyPath id_rsa.pub
+
+          # select credential
+          credential select --id 1
+
+          # create a new template
+          template create --AWS --name minviable-cms-aws-$pUid --description "cms-hadoop-cluster" --instanceType ${pClusterInstanceType} --volumeSize ${pVolumeSize} --volumeCount ${pVolumeCount}
+
+          # create network
+          network create --AWS --NEW_SUBNET --name cms-hadoop-network-$pUid --description "cms-hadoop-network" --subnet ${pClusterSubnetCidr} --vpcID ${pVpcId} --internetGatewayID ${pInternetGatewayId}
+
+          # select network
+          network select --name cms-hadoop-network-$pUid
+
+          # blueprint setup
+          blueprint create --name ${pBluePrintName}-$pUid --description hadoop-cluster-blueprint-$pUid --file ${pBluePrintName}.json
+
+          # select blueprint
+          blueprint select --name ${pBluePrintName}-$pUid
+
+          # create instance groups
+          instancegroup configure --AWS --instanceGroup "host_group_master_1" --nodecount 1 --templateName minviable-cms-aws-$pUid --securityGroupName "default-aws-only-ssh-and-ssl" --ambariServer true
+          instancegroup configure --AWS --instanceGroup "host_group_master_2" --nodecount 1 --templateName minviable-cms-aws-$pUid --securityGroupName "default-aws-only-ssh-and-ssl" --ambariServer false
+          instancegroup configure --AWS --instanceGroup "host_group_master_3" --nodecount 1 --templateName minviable-cms-aws-$pUid --securityGroupName "default-aws-only-ssh-and-ssl" --ambariServer false
+          instancegroup configure --AWS --instanceGroup "host_group_client_1"  --nodecount 1 --templateName minviable-cms-aws-$pUid --securityGroupName "default-aws-only-ssh-and-ssl" --ambariServer false
+          instancegroup configure --AWS --instanceGroup "host_group_slave_1" --nodecount 3 --templateName minviable-cms-aws-$pUid --securityGroupName "default-aws-only-ssh-and-ssl" --ambariServer false
+
+          # create stack
+          stack create --AWS --name "mosaic-cms-hadoop-stack" --region ${pRegion} --wait true
+
+          # create cluster
+          cluster create --description "mosaic-semanticbits-hadoop-cluster" --wait true
+          EOM
+
+          sleep 10s
+  # Associate EIP to the Instance
+  rAssociateEip:
+    Type: AWS::EC2::EIPAssociation
+    DependsOn: ['rPublicIp', 'rCloudBreakInstance']
+    Properties:
+      AllocationId: !GetAtt rPublicIp.AllocationId
+      InstanceId: !Ref rCloudBreakInstance
+  # create public ip
+  rPublicIp:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  # IAM Instance Profile
+  rIAMInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      InstanceProfileName: !Sub Cloudbreak-Instance-Profile-${pUniqueHash}
+      Roles:
+      - RAP_CLI_ROLE
+  # Cloudbreak user
+  rCloudBreakUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Sub cloudbreak-${pUniqueHash}
+      Policies:
+      - PolicyName: !Sub CloudBreak-AssumeRole-Policy-${pUniqueHash}
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - sts:AssumeRole
+            Resource: "*"
+  # Access key for the new user
+  rAccessKey:
+    Type: AWS::IAM::AccessKey
+    DependsOn: rCloudBreakUser
+    Properties:
+      UserName: !Ref rCloudBreakUser
+      Status: Active
+  rDeployerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub cloudbreak-deployer-${pUniqueHash}
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Principal:
+              AWS:
+                - "arn:aws:iam::099657314785:root"
+            Condition:
+              StringEquals:
+                sts:ExternalId: "provision-ambari"
+      Policies:
+      -
+        PolicyName: !Sub CloudBreak-DeployerRole-Policy-${pUniqueHash}
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            -
+              Effect: Allow
+              Action:
+              - "cloudformation:*"
+              Resource: "*"
+            -
+              Effect: Allow
+              Action:
+              - "ec2:*"
+              Resource: "*"
+            -
+              Effect: Allow
+              Action:
+              - "iam:PassRole"
+              Resource: "*"
+            -
+              Effect: Allow
+              Action:
+              - "autoscaling:*"
+              Resource: "*"
+Outputs:
+  rAccessKey:
+    Value: !Ref rAccessKey
+  rIAMInstanceProfile:
+    Value: !Ref rIAMInstanceProfile
+  rCloudBreakInstance:
+    Value: !Ref rCloudBreakInstance
+  rPublicDns:
+    Value: !GetAtt
+      - rCloudBreakInstance
+      - PublicDnsName
+  rDeployerRole:
+    Value: !GetAtt
+      - rDeployerRole
+      - Arn
+  rPublicIp:
+    Value: !Ref rPublicIp
