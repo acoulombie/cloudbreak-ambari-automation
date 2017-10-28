@@ -82,7 +82,7 @@ Hadoop / Ambari install script must be executed using CloudBreak Shell. This she
 | pApplicationName |  Application name | Dev-Cloudbreak-AZa | Optional |
 | pVpcTenancy |  VPC tenancy | dedicated | Optional |
 | pApplicationIdentifier |  Application identifier | cloudbreak | Optional |
-| pUniqueHash | Hash to generate unique resource names | dedicated | *Automated* |
+| pUniqueHash | Hash to generate unique resource names | N/A | *Automated* |
 | pEnvironment | Stack environment | development | Optional |
 | pTagTechnicalContact |  Technical contact for this template | Ritesh Patel | Optional |
 | pVpcId | Vpc Identifier to launch resources | vpc-7fc41c07 | **Replace** |
