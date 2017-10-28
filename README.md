@@ -133,8 +133,10 @@ Sample output.
 ##### Playbooks & Roles
 
 Playbook uses **ansible-vault** to generate encrypted credentials. These credentials are passed into plays. 
+
 **Roles**
 This playbook uses only one role: cft-cloudbreak
+
 **Vars**
 Encrypted Credentials
 
