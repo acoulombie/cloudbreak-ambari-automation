@@ -143,6 +143,7 @@ This playbook uses only one role: cft-cloudbreak
 Encrypted Credentials
 
 **Playbook Usage**
+
 Shell command for executing playbook.
 
 ```shell
