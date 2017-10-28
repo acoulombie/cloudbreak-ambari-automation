@@ -167,13 +167,16 @@ To track progress on Hadoop Cluster log into CloudBreak UI and click on the Clus
 10/28/2017 1:42:17 PM mosaic-cms-hadoop-stack - available: Ambari cluster built; Ambari ip:34.342.212.113
 ```
 #### CloudBreak UI
+
 Upon completing the install CloudBreak and Ambari UI will be accessible through browsers. Use rPublicIp to login to CloudBreak UI. CloudBreak UI allows you to create additional accounts as required. 
 
 CloudBreak UI endpoint: **https://{{rPublicIp}}/**
 (replace rPublicIp with an actual Ip Address)
+
 Credentials: **admin@example.com / password**
 
 #### Ambari UI
+
 From CloudBreak UI, select the "Cluster" to retrieve Ambari endpoint. 
 
 Ambari credentials: **admin/admin**
@@ -181,7 +184,9 @@ Ambari credentials: **admin/admin**
 ** *This stack completes execution in about 30 minutes*
 
 #### Issues
+
 Gimme a holler if you find one :) :)
 
 #### Suggestions
+
 I love new ideas & believe me I am **all ears** for any suggestions.
