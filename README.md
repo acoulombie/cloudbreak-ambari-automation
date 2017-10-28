@@ -171,6 +171,7 @@ To track progress on Hadoop Cluster log into CloudBreak UI and click on the Clus
 Upon completing the install CloudBreak and Ambari UI will be accessible through browsers. Use rPublicIp to login to CloudBreak UI. CloudBreak UI allows you to create additional accounts as required. 
 
 CloudBreak UI endpoint: **https://{{rPublicIp}}/**
+
 (replace rPublicIp with an actual Ip Address)
 
 Credentials: **admin@example.com / password**
