@@ -103,6 +103,7 @@ Hadoop / Ambari install script must be executed using CloudBreak Shell. This she
 | pRootArn | Root Arn for the deployer role | N/A | **Replace** |
 | pStackName | Cloudbreak Hadoop cluster stack name | Cloudbreak-Hadoop-Stack | Optional |
 | pClusterName | Hadoop cluster name | Hadoop-Cluster-1 | Optional |
+| pInstanceProfileRole | Instance profile role | N/A | **Replace** |
 
 #### Stack Outputs
 

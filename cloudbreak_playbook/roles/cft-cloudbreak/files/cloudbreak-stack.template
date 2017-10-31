@@ -30,6 +30,7 @@ Metadata:
         - pApplicationIdentifier
         - pEnvironment
         - pTagTechnicalContact
+        - pInstanceProfileRole
       # Network parameters
       - Label:
           default: Network Configurations
@@ -122,6 +123,8 @@ Metadata:
         default: Hadoop cluster stack name 
       pClusterName: 
         default: Hadoop cluster name
+      pInstanceProfileRole: 
+        default: Instance profile role 
   Input:
     Description: Optional paramaters for network deployment and database connectivity (VPC, subnet, etc)
   Output:
@@ -283,6 +286,9 @@ Parameters:
   pRootArn:
     Description: Root ARN
     Type: String
+  pInstanceProfileRole: 
+    Description: Instance profile role 
+    Type: String
 Resources:
   # CloudBreak Instance
   rCloudBreakInstance:
@@ -423,7 +429,7 @@ Resources:
       Path: /
       InstanceProfileName: !Sub Cloudbreak-Instance-Profile-${pUniqueHash}
       Roles:
-      - RAP_CLI_ROLE
+      - pInstanceProfileRole
   # Cloudbreak user
   rCloudBreakUser:
     Type: AWS::IAM::User

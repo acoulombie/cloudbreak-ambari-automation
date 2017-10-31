@@ -32,6 +32,7 @@
       pS3EndPoint: "s3://rap-cloudbreak-blueprints/"
       pSecurityGroup: "sg-68b5ca1a"
       pRootArn: "arn:aws:iam::099657314785:root"
+      pInstanceProfileRole: "RAP_CLI_ROLE"
       ################################
       # parameters (optional)
       pApplicationName: "DEV-CloudBreak-{{unique_hash}}"
