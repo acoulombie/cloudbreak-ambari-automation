@@ -64,6 +64,7 @@ Metadata:
         - pVolumeCount
         - pBluePrintName
         - pS3EndPoint
+        - pSubnets
     # Parameter labels to be displayed to the user
     ParameterLabels:
       pVpcTenancy:
@@ -110,6 +111,8 @@ Metadata:
         default: EC2 Keypair to attach to the underlying instance for SSH access.
       pUniqueHash:
         default: Hash to generate unique resource names
+      pSubnets:
+        default: List of existing subnets for hadoop cluster 
   Input:
     Description: Optional paramaters for network deployment and database connectivity (VPC, subnet, etc)
   Output:
@@ -256,6 +259,10 @@ Parameters:
     Description: Unique hash to append
     Type: String
     Default: 12345678
+  pSubnets:
+    Description: List of existing subnets for hadoop cluster 
+    Type: String
+    Default: subnet-4ca60907
 Resources:
   # CloudBreak Instance
   rCloudBreakInstance:
@@ -351,7 +358,7 @@ Resources:
           template create --AWS --name minviable-cms-aws-$pUid --description "cms-hadoop-cluster" --instanceType ${pClusterInstanceType} --volumeSize ${pVolumeSize} --volumeCount ${pVolumeCount}
 
           # create network
-          network create --AWS --NEW_SUBNET --name cms-hadoop-network-$pUid --description "cms-hadoop-network" --subnet ${pClusterSubnetCidr} --vpcID ${pVpcId} --internetGatewayID ${pInternetGatewayId}
+          network create --AWS --EXISTING_SUBNET --name cms-hadoop-network-$pUid --description "cms-hadoop-network" --subnetId ${pSubnets} --vpcID ${pVpcId} --internetGatewayID ${pInternetGatewayId}
 
           # select network
           network select --name cms-hadoop-network-$pUid
