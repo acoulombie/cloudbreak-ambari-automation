@@ -31,6 +31,7 @@
       pBluePrintName: "hdp-small-cluster"
       pS3EndPoint: "s3://rap-cloudbreak-blueprints/"
       pSecurityGroup: "sg-68b5ca1a"
+      pRootArn: "arn:aws:iam::099657314785:root"
       ################################
       # parameters (optional)
       pApplicationName: "DEV-CloudBreak-{{unique_hash}}"
@@ -43,6 +44,9 @@
       pRegion: "us-east-1"
       pClusterSecurityGroupName: "default-aws-only-ssh-and-ssl"
       pCredentialName: "cms-aws-credential"
+      # Replace values for these parameters else defaults will be used
+      # pStackName: ""
+      # pClusterName: ""
     aws_access_key: "{{aws_access_key_id}}"
     aws_secret_key: "{{aws_secret_access_key}}"
     region: "{{region}}"

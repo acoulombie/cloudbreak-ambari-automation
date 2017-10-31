@@ -51,6 +51,7 @@ Metadata:
         - pImageId
         - pKeypair
         - pUniqueHash
+        - pRootArn
       # Hadoop Cluster configurations parameters
       - Label:
           default: Hadoop Cluster Configurations
@@ -65,6 +66,8 @@ Metadata:
         - pBluePrintName
         - pS3EndPoint
         - pSubnets
+        - pStackName
+        - pClusterName
     # Parameter labels to be displayed to the user
     ParameterLabels:
       pVpcTenancy:
@@ -112,7 +115,13 @@ Metadata:
       pUniqueHash:
         default: Hash to generate unique resource names
       pSubnets:
-        default: List of existing subnets for hadoop cluster 
+        default: List of existing subnets for hadoop cluster
+      pRootArn:
+        default: Root Arn for the role
+      pStackName:
+        default: Hadoop cluster stack name 
+      pClusterName: 
+        default: Hadoop cluster name
   Input:
     Description: Optional paramaters for network deployment and database connectivity (VPC, subnet, etc)
   Output:
@@ -263,6 +272,17 @@ Parameters:
     Description: List of existing subnets for hadoop cluster 
     Type: String
     Default: subnet-4ca60907
+  pStackName: 
+    Description: Hadoop cluster stack name 
+    Type: String
+    Default: Cloudbreak-Hadoop-Stack 
+  pClusterName: 
+    Description: Hadoop cluster name 
+    Type: String 
+    Default: Hadoop-Cluster-1
+  pRootArn:
+    Description: Root ARN
+    Type: String
 Resources:
   # CloudBreak Instance
   rCloudBreakInstance:
@@ -358,7 +378,7 @@ Resources:
           template create --AWS --name minviable-cms-aws-$pUid --description "cms-hadoop-cluster" --instanceType ${pClusterInstanceType} --volumeSize ${pVolumeSize} --volumeCount ${pVolumeCount}
 
           # create network
-          network create --AWS --EXISTING_SUBNET --name cms-hadoop-network-$pUid --description "cms-hadoop-network" --subnetId ${pSubnets} --vpcID ${pVpcId} --internetGatewayID ${pInternetGatewayId}
+          network create --AWS --NEW_SUBNET --name cms-hadoop-network-$pUid --description "cms-hadoop-network" --subnet ${pClusterSubnetCidr} --vpcID ${pVpcId} --internetGatewayID ${pInternetGatewayId}
 
           # select network
           network select --name cms-hadoop-network-$pUid
@@ -377,10 +397,10 @@ Resources:
           instancegroup configure --AWS --instanceGroup "host_group_slave_1" --nodecount 3 --templateName minviable-cms-aws-$pUid --securityGroupName "default-aws-only-ssh-and-ssl" --ambariServer false
 
           # create stack
-          stack create --AWS --name "mosaic-cms-hadoop-stack" --region ${pRegion} --wait true
+          stack create --AWS --name ${pStackName}-$pUid --region ${pRegion} --wait true
 
           # create cluster
-          cluster create --description "mosaic-semanticbits-hadoop-cluster" --wait true
+          cluster create --description ${pClusterName}-$pUid --wait true
           EOM
 
           sleep 10s
@@ -437,7 +457,7 @@ Resources:
               - sts:AssumeRole
             Principal:
               AWS:
-                - "arn:aws:iam::099657314785:root"
+                - !Sub ${pRootArn}
             Condition:
               StringEquals:
                 sts:ExternalId: "provision-ambari"
