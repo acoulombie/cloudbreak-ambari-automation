@@ -92,7 +92,7 @@ Hadoop / Ambari install script must be executed using CloudBreak Shell. This she
 | pImageId | CloudBreak pre-baked AMI | ami-10a78606 | Optional |
 | pKeypair | Keypair to launch resources | mosaic-ritesh | **Replace** |
 | pClusterInstanceType | Hadoop cluster instance type | m4.xlarge | Optional |
-| pClusterSubnetCidr | Subnet Cidr for Hadoop Cluster | 10.0.7.0/24 | **Replace** |
+| pSubnets | Existing subnets for hadoop cluster | (comma separated subnet identifiers) | **Replace** |
 | pSecurityGroup | Security group for CloudBreak Instance | sg-68b5ca1a | **Replace** |
 | pClusterSecurityGroupName | Security group name for Hadoop Cluster nodes | default-aws-only-ssh-and-ssl | Optional |
 | pInternetGatewayId | Internet gateway identifier to attach with Hadoop cluster subnet | igw-ff8c2386 | **Replace** |
@@ -100,6 +100,9 @@ Hadoop / Ambari install script must be executed using CloudBreak Shell. This she
 | pVolumeCount | Hadoop cluster node volume count | 2 | Optional |
 | pBluePrintName | Hadoop Cluster blue print (stored in S3 bucket) | hdp-small-cluster | **Replace** |
 | pS3EndPoint | S3 Endpoint | s3://rap-cloudbreak-endpoint | **Replace** |
+| pRootArn | Root Arn for the deployer role | N/A | **Replace** |
+| pStackName | Cloudbreak Hadoop cluster stack name | Cloudbreak-Hadoop-Stack | Optional |
+| pClusterName | Hadoop cluster name | Hadoop-Cluster-1 | Optional |
 
 #### Stack Outputs
 
