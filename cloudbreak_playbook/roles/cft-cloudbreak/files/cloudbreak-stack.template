@@ -278,11 +278,11 @@ Parameters:
   pStackName: 
     Description: Hadoop cluster stack name 
     Type: String
-    Default: Cloudbreak-Hadoop-Stack 
+    Default: cloudbreak-hadoop-stack 
   pClusterName: 
     Description: Hadoop cluster name 
     Type: String 
-    Default: Hadoop-Cluster-1
+    Default: hadoop-cluster-1
   pRootArn:
     Description: Root ARN
     Type: String
@@ -403,10 +403,10 @@ Resources:
           instancegroup configure --AWS --instanceGroup "host_group_slave_1" --nodecount 3 --templateName minviable-cms-aws-$pUid --securityGroupName "default-aws-only-ssh-and-ssl" --ambariServer false
 
           # create stack
-          stack create --AWS --name ${pStackName}-$pUid --region ${pRegion} --wait true
+          stack create --AWS --name ${pStackName} --region ${pRegion} --wait true
 
           # create cluster
-          cluster create --description ${pClusterName}-$pUid --wait true
+          cluster create --description ${pClusterName} --wait true
           EOM
 
           sleep 10s
@@ -429,7 +429,7 @@ Resources:
       Path: /
       InstanceProfileName: !Sub Cloudbreak-Instance-Profile-${pUniqueHash}
       Roles:
-      - pInstanceProfileRole
+      - !Ref pInstanceProfileRole
   # Cloudbreak user
   rCloudBreakUser:
     Type: AWS::IAM::User
